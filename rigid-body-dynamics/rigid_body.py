@@ -6,39 +6,45 @@ MINDBL = np.finfo(np.double).tiny
 
 
 def _ismatrix(mat, shape=None):
-    if not isinstance(mat, np.matrix):
-        return False
-    else if shape is not None:
-        return mat.shape = shape
+    if isinstance(mat, np.matrix):
+        return True if shape is None else (mat.shape == shape)
     else:
-        return true
+        return False
+
+
+def _issquare(mat, dim=None):
+    shape = None is dim is None else [dim, dim]
+    return _issquare(mat, shape)
 
 
 def _issymmetric(mat, dim=None):
-    shape = None if dim is None else [dim, dim]
-    if _ismatrix(mat, shape):
+    if _issquare(mat, dim):
         return (mat.transpose == mat).all()
     else:
         return False
 
 
-def _isidentity(mat, dim=None, tol=1000.0*MINDBL):
-    shape = None if dim is None else [dim, dim]
+def _iszeros(mat, shape=None, tol=1000.0*MINDBL):
     if _ismatrix(mat, shape):
-        identity = np.matrix(np.identity(mat.shape[0]))
-        return (abs(mat-identity)<tol).all()
+        return (abs(mat) < tol).all()
     else:
         return False
 
+
+def _isidentity(mat, dim=None, tol=1000.0*MINDBL):
+    if _issquare(mat, dim):
+        d = mat.shape[0]
+        return _iszeros(mat-np.matrix(np.identity(d)), tol)
+    else:
+        return False
+
+
 def _isorthogonal(mat, dim=None, tol=1000*MINDBL):
-    shape = None if dim is None else [dim, dim]
-    if _ismatrix(mat, shape):
-        identity = mat.transpose * mat
+    if _issquare(mat, dim):
+        return _isidentity(mat.transpose() * mat, tol)
+    else:
+        return False
 
-
-        
-    
-        
 
 class RigidBody:
     """
@@ -61,10 +67,11 @@ class RigidBody:
     rigid body, given in BFF. 
     
     """
-    mass = 1000.0
-    inertia = np.matrix(np.identity(3))
-    attitude = np.matrix(np.identity(3))
-    angular_vel = np.matrix(np.zeros(3)).transpose()
+
+# Private: 
+
+    __mass = 1000.0
+    __inertia = np.matrix(np.identity(3))
     
     def __init__(self, mass=None, inertia=None):
         if mass is not None:
@@ -75,11 +82,28 @@ class RigidBody:
             assert(inertia.shape=[3,3])
             assert((inertia.transpose==inertia).all())
             self.inertia = inertia
-    # Attributes
 
-    # Methods
-    def init_state(self, attitude=None, angular_vel=None):
+# Public:
+
+    attitude = np.matrix(np.identity(3))
+    angular_vel = np.matrix(np.zeros(3)).transpose()
+    
+    ### Attributes
+    def mass(self):
+        return __mass
+
+    def inertia(self):
+        return __inertia
+
+    ### Methods
+    def set_state(self, attitude=None, angular_vel=None):
         if attitude is not None:
+            assert(_isorthogonal(attitude, 3))
+            self.attitude = attitude
+        if angular_vel is not None:
+            assert(np.size(angular_vel) == 3)
+            self.angular_vel = np.matrix(angular_vel).reshape([3,1])
+
 
 
 
