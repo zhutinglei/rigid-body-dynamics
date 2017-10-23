@@ -1,7 +1,10 @@
 #!/usr/local/bin/python3
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import scipy.special.erf as erf
+import scipy.constants as const
+
 
 class DifferentialArea:
     """
@@ -47,11 +50,10 @@ class DifferentialArea:
         =======
         vdf: double
         """
-        gc = flow.GASCONST
         t = flow.temperature
         v = flow.velocity - self.velocity
-        vdf = (2.0*np.pi*gc*t)-1.5)*np.exp(
-            -0.5/gc/t*np.dot(velocity-v, velocity-v)
+        vdf = (2.0*np.pi*const.R*t)-1.5)*np.exp(
+            -0.5/const.R/t*np.dot(velocity-v, velocity-v)
         )
         return vdf
 
@@ -75,7 +77,7 @@ class DifferentialArea:
             assert(len(sigma)==2)
             sigma_n, sigma_t = sigma
 
-        scale = np.sqrt(2.0*flow.GASCONST*flow.temperature)
+        scale = np.sqrt(2.0*const.R*flow.temperature)
         s_flow = flow.velocity / scale
         s_area = s_flow - self.velocity / scale
         w_area = self.angular_velocity / scale
@@ -106,13 +108,11 @@ class FreeMolecularFlow:
 
     Parameters:
     ===========
-    GASCONST: const, kg m^2 / (s^2 K mol)
     temperature: kelvins, double
     density: kg / m^3, double
     velocity: m/s, 3-d vector, double
 
     """
-    GASCONST = 8.3144598 
     def __init__(self, temperature=None, density=None, velocity=None):
         self.temperature = 1000.0 if temperature == None else temperature
         self.density = 1.0e-12 if density == None else density
