@@ -1,49 +1,7 @@
 #!/usr/local/bin/python3
 
 import numpy as np
-
-MINDBL = np.finfo(np.double).tiny
-
-def _ismatrix(mat, shape=None):
-    if isinstance(mat, np.matrix):
-        return True if shape is None else (mat.shape == shape)
-    else:
-        return False
-
-
-def _issquare(mat, dim=None):
-    shape = None is dim is None else [dim, dim]
-    return _issquare(mat, shape)
-
-
-def _issymmetric(mat, dim=None):
-    if _issquare(mat, dim):
-        return (mat.transpose == mat).all()
-    else:
-        return False
-
-
-def _iszeros(mat, shape=None, tol=1000.0*MINDBL):
-    if _ismatrix(mat, shape):
-        return (abs(mat) < tol).all()
-    else:
-        return False
-
-
-def _isidentity(mat, dim=None, tol=1000.0*MINDBL):
-    if _issquare(mat, dim):
-        d = mat.shape[0]
-        return _iszeros(mat-np.matrix(np.identity(d)), tol)
-    else:
-        return False
-
-
-def _isorthogonal(mat, dim=None, tol=1000*MINDBL):
-    if _issquare(mat, dim):
-        return _isidentity(mat.transpose() * mat, tol)
-    else:
-        return False
-
+import checks as ck
 
 class RigidBody:
     """
@@ -78,11 +36,7 @@ class RigidBody:
             assert(isinstance(mass, float))
             self.mass = mass
         if inertia is not None:
-            assert(isinstance(inertia, np.matrix))
-            assert(inertia.shape=[3,3])
-            assert((inertia.transpose==inertia).all())
-            self.inertia = inertia
-
+            assert(ck.issymmetric(inertia, 3))
 # Public:
 
     attitude = np.matrix(np.identity(3))
@@ -97,13 +51,13 @@ class RigidBody:
 
     def get_euler_angles(self, angle_type):
         assert(angle_type in __angle_types)
-        ### TODO
+        ### TODO 
         pass
 
     ### Methods
     def set_state(self, attitude=None, angular_vel=None):
         if attitude is not None:
-            assert(_isorthogonal(attitude, 3))
+            assert(ck.isorthogonal(attitude, 3))
             self.attitude = attitude
         if angular_vel is not None:
             assert(np.size(angular_vel) == 3)
