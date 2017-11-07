@@ -1,45 +1,33 @@
 #!/usr/local/bin/python3
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 
 import numpy as np
+from astropy.coordinates.matrix_utilities import rotation_matrix, angle_axis
+
 import checks as ck
 
-class Attitude:
-    """
-    Implementation of attitude transformation in space.
+# Local constants
+angle_types = ('zxz', 'xyz')
 
-    Parameters:
-    ===========
-    m `numpy.matrix`, shape=[3, 3]
-        m is an orthongonal matrix, i.e. inverse = transpose, the
-    columns are coordinates of the axes of body fixed frame (BFF) in 
-    translation frame (TF).
 
-    q: `numpy.quaternion`
-        q is a quaternion, representing the transformation.
+# Useful functions
+def angles_to_mat(angles, angle_type):
+    assert(angle_type in angle_types)
+    assert(angles.shape == (3,))
+    rots = [rotation_matrix(angles[i], angle_type[i]) for i in [0,1,2]]
+    return np.matrix(rots[0] * rots[1] * rots[2])
 
-    Remarks:
-    ========
-        For a vector r = [x y z]^T, represented in BFF, its TF 
-    coordiates [X Y Z]^T is obtained by
-        [X Y Z]^T = m * [x y z]^T
+def mat_to_angle_axis(mat):
+    assert(isorthogonal(mat, 3))
+    angle, axis = angle_axis(mat)
+    return angle.value('rad'), axis
 
-    """
-# Private
-
-    __init__(self):
-        self.m = np.identity_matrix(3)
-        self.q = np.quaternion(1, 0, 0, 0)
-
-    @staticmethod:
-    __mat_to_quat(mat):
-    # TODO
-    pass
-
-# Public
-
-        
-
+def ode_free_rigid_body(time, state):
+    assert(isinstance(state, np.array))
+    assert(state.shape == (12,))
+    attitude = state[0:9].reshape([3, 3])
+    angular_vel = state[9:12]
+    
 
 
 class RigidBody:
@@ -57,6 +45,8 @@ class RigidBody:
     symmetric matrix represented in the body-fixed frame (BFF), so it is
     constant for a specific rigid body.
     
+    state: `numpy.array`, shape=(12,)
+
     attitude: `numpy.matrix`, shape=[3,3] 
         attitude is an orthongonal matrix, i.e. inverse = transpose, the
     columns are coordinates of the axes of BFF in translation frame (TF)
@@ -68,7 +58,6 @@ class RigidBody:
 
 # Private: 
 
-    __angle_types = ('zxz', 'xyz')
     __mass = 1000.0
     __inertia = np.identity(3)
     
@@ -92,7 +81,7 @@ class RigidBody:
         return __inertia
 
     def get_euler_angles(self, angle_type):
-        assert(angle_type in __angle_types)
+        assert(angle_type in angle_types)
         ### TODO 
         pass
 
@@ -124,6 +113,7 @@ class RigidBody:
         w_crs = np.cross(np.eye(3), w.getA1())
         dw = np.linalg.inv(j) * (torque - w_crs * J * w)
         da = a * w_crs * a
+        return dw, da
 
     ''' Methods '''
     def set_state(self, attitude=None, angular_vel=None):
@@ -134,15 +124,10 @@ class RigidBody:
             assert(np.size(angular_vel) == 3)
             self.angular_vel = np.matrix(angular_vel).reshape([3,1])
     
-    def set_attitude_from_angles(self, angles, angle_type):
-        assert(angle_type in __angle_types)
-        # TODO
-        pass
-
-
+    
     def free_propagate(self, attitude=None, angular_vel=None, time_delta=None):
         """
-            Propagate rigid body in Euler case, i.e. no external torque
+            Propagate rigid body without external torque
 
         Parameters:
         ==========
@@ -154,7 +139,8 @@ class RigidBody:
         self.set_state(attitude, angular_vel)
         if time_delta is None:
             return self
-        # TODO
-        pass
+        state = np.append(attitude, angular_vel)
 
-
+        def ode(time, state):
+            dw, da = changing_rate()
+            return 
