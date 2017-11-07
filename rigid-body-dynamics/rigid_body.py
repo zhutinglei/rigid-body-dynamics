@@ -4,6 +4,44 @@
 import numpy as np
 import checks as ck
 
+class Attitude:
+    """
+    Implementation of attitude transformation in space.
+
+    Parameters:
+    ===========
+    m `numpy.matrix`, shape=[3, 3]
+        m is an orthongonal matrix, i.e. inverse = transpose, the
+    columns are coordinates of the axes of body fixed frame (BFF) in 
+    translation frame (TF).
+
+    q: `numpy.quaternion`
+        q is a quaternion, representing the transformation.
+
+    Remarks:
+    ========
+        For a vector r = [x y z]^T, represented in BFF, its TF 
+    coordiates [X Y Z]^T is obtained by
+        [X Y Z]^T = m * [x y z]^T
+
+    """
+# Private
+
+    __init__(self):
+        self.m = np.identity_matrix(3)
+        self.q = np.quaternion(1, 0, 0, 0)
+
+    @staticmethod:
+    __mat_to_quat(mat):
+    # TODO
+    pass
+
+# Public
+
+        
+
+
+
 class RigidBody:
     """
     Define the status of a rigid body, the center of mass is fixed as 
