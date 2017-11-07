@@ -25,3 +25,4 @@ def propagate(state, inertia, t0, t1, n_steps):
         t = min(r.t + dt, t1)
         times.append(t)
         states.append(r.integrate(t)
+    return times, states
