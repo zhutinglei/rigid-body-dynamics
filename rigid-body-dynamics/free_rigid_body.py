@@ -4,6 +4,8 @@
 import numpy as np
 from scipy.integrate import odeint
 import scipy.integrate as integrate
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
 
 def ode_free_rigid_body(state, time, inertia):
@@ -28,10 +30,15 @@ if __name__ == "__main__":
     print("state = ", state, type(state))
     t0 = 0.0
     t1 = 100.0
-    n_steps = 100
+    n_steps = 150
     dt = (t1-t0)/n_steps
     times = np.arange(t0, t1, dt, dtype=float)
     print('start integrating')
     result = odeint(ode_free_rigid_body, state, times, args=(inertia,))
     print(result[:, 9:12])
-
+    
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.plot(result[:,9], result[:, 10], result[:,11], 'k.')
+    plt.show()
+    
