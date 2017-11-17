@@ -6,8 +6,15 @@ from pyquaternion import Quaternion
 from scipy.integrate import odeint
 import scipy.integrate as integrate
 import astropy.constants as const
+from astropy.time import Time
+import astropy.units as u
+from poliastro.bodies import Earth
+from poliastro.twobody import Orbit 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+
+
+# def get_sat_posvel(orbit, time)
 
 
 def gravity_gradient_torque(earth_center_position, inertia):
@@ -30,11 +37,11 @@ def gravity_gradient_torque(earth_center_position, inertia):
     """
     gm = const.GM_earth.to_value()  # unit = m3/s2 
     r = earth_center_position
-    torque = 3.0 * gm * np.norm(r)**(-5) * np.cross(r, np.matmul(inertia, r))
+    torque = 3.0 * gm * np.linalg.norm(r)**(-5) * np.cross(r, np.matmul(inertia, r))
     return torque
     
 
-def ode_rigid_body_1(state, time, inertia, earth_pos):
+def ode_rigid_body_1(state, time, inertia, orbit):
     """
     ODE for integration, use quaternion to represent attitude.
 
@@ -55,17 +62,18 @@ def ode_rigid_body_1(state, time, inertia, earth_pos):
     inertia: `numpy.array`, shape=(3,3)
         A symmetric matrix, represented in body-fixed frame
 
-    earth_pos: `numpy.array`, shape=(3,)
-        A 3d vector, from satellite center to Earth center, represented
-    in translational frame.
+    orbit: `poliastro.twobody.Orbit`
+        Initial value of orbit state, to obtain posvel at specific time.
     """
     q = Quaternion(state[0:4])
     w = state[4:7]
-    r = q.inverse.rotate(earth_pos)
     torque_free = - np.cross(w, np.matmul(inertia, w))
-    # torque_grav = gravity_gradient_torque(r, inertia)
+    # obtain satellite position at current time
+    sat_pos = orbit.propagate(time * u.second).r   # <Quantity [x, y, z] km>
+    r = q.inverse.rotate(-sat_pos.to_value())
+    torque_grav = gravity_gradient_torque(r, inertia)
     torque_grav = np.zeros(3)
-    dw = np.matmul(np.linalg.inv(inertia), torque_grav - torque_free)
+    dw = np.matmul(np.linalg.inv(inertia), torque_grav + torque_free)
     dq = 0.5 * q * Quaternion(scaler=0, vector=w)
 
     return np.append(dq.elements, dw)
@@ -80,12 +88,14 @@ if __name__ == "__main__":
 
     print("state = ", state, type(state))
     t0 = 0.0
-    t1 = 100.0
-    n_steps = 150
+    t1 = 60.0
+    n_steps = 130
     dt = (t1-t0)/n_steps
-    times = np.arange(t0, t1, dt, dtype=float)
+    times = np.arange(t0, t1, dt)
     print('start integrating')
-    result = odeint(ode_rigid_body_1, state, times, args=(inertia, np.zeros(3)))
+    result = odeint(
+        ode_rigid_body_1, state, times,
+        args=(inertia, Orbit.circular(Earth, alt=500*u.km)))
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
